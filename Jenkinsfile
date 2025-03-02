@@ -1,14 +1,14 @@
 pipeline {
     agent any
     environment {
-        AWS_REGION = 'us-east-1'
+        AWS_REGION = 'us-east-1' 
     }
     stages {
         stage('Set AWS Credentials') {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'Docker-Jenkins' 
+                    credentialsId: 'AWS_SECRET_ACCESS_KEY' 
                 ]]) {
                     sh '''
                     echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
@@ -19,7 +19,7 @@ pipeline {
         }
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/babatundeoloyeX/autoScale.git'
+                git branch: 'main', url: 'https://github.com/derrickSh43/autoScale' 
             }
         }
         stage('Initialize Terraform') {
@@ -33,7 +33,7 @@ pipeline {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'Docker-Jenkins'
+                    credentialsId: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh '''
                     export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
@@ -48,7 +48,7 @@ pipeline {
                 input message: "Approve Terraform Apply?", ok: "Deploy"
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'DockerJenkins'
+                    credentialsId: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh '''
                     export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
@@ -58,45 +58,13 @@ pipeline {
                 }
             }
         }
-        stage('Terraform Destroy') {
-        steps {
-            script {
-                input message: 'Are you sure you want to destroy the infrastructure?', ok: 'Proceed with Destroy'
-
-                 withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'Docker-Jenkins'
-                ]]) {
-                    sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                    terraform destroy -auto-approve
-                    '''
-                }
-                }
-            }
-        
-    }   
-
+    }
     post {
         success {
             echo 'Terraform deployment completed successfully!'
         }
-
         failure {
             echo 'Terraform deployment failed!'
         }
-    }
-}
-
-// Function to Create a Jira Ticket
-def createJiraTicket(String issueTitle, String issueDescription) {
-    script {
-        jiraNewIssue site: "${JIRA_SITE}",
-                     projectKey: "${JIRA_PROJECT}",
-                     issueType: "Bug",
-                     summary: issueTitle,
-                     description: issueDescription,
-                     priority: "High"
     }
 }
